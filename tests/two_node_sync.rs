@@ -527,3 +527,25 @@ async fn a_node_that_only_holds_part_of_a_transaction_does_not_relay_it() {
         "a trimmed copy must not pose as the whole transaction"
     );
 }
+
+#[tokio::test]
+async fn a_receiver_applies_its_own_policy_even_when_the_sender_sends_more() {
+    let network = Network::default();
+    // A is willing to share both collections; B is only willing to take memories.
+    let a = node(&network, "a", &["b"], &["memories", "entities"]).await;
+    let mut b = node(&network, "b", &["a"], &["memories"]).await;
+    a.db.commit(vec![create("memories", "m", 1), create("entities", "e", 2)]);
+
+    sync(&network, &a, &mut b).await.0.unwrap();
+
+    assert_eq!(value(&b.db, "memories", "m"), Some(1));
+    assert_eq!(
+        value(&b.db, "entities", "e"),
+        None,
+        "B never agreed to take entities"
+    );
+    assert_eq!(
+        b.store.cursors().await.unwrap().get(&origin("a")),
+        Sequence::new(1)
+    );
+}

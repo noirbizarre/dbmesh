@@ -65,7 +65,12 @@ pub enum Error {
 
     /// A frame could not be encoded.
     #[error("failed to encode a protocol frame")]
-    #[diagnostic(code(dbmesh::protocol::encode))]
+    #[diagnostic(
+        code(dbmesh::protocol::encode),
+        help(
+            "frames are built from DBMesh's own types, so this is a bug in DBMesh: please report it"
+        )
+    )]
     Encode(#[source] serde_json::Error),
 
     /// The metadata store failed.
@@ -148,4 +153,55 @@ pub enum Error {
         help("register the peer with `DbMesh::register_peer` before synchronizing with it")
     )]
     UnknownPeer(PeerId),
+}
+
+#[cfg(test)]
+mod tests {
+    use miette::Diagnostic;
+
+    use super::*;
+
+    #[test]
+    fn every_diagnostic_code_follows_the_published_scheme_and_carries_advice() {
+        let boxed = || -> BoxError { "boom".into() };
+        let json = || serde_json::from_str::<u8>("x").unwrap_err();
+        let errors = [
+            Error::InvalidName {
+                kind: "node id",
+                value: String::new(),
+                reason: "it is empty",
+            },
+            Error::InvalidBatch {
+                origin: "a".into(),
+                reason: "x".into(),
+            },
+            Error::Malformed(json()),
+            Error::Encode(json()),
+            Error::Storage(boxed()),
+            Error::IdentityMismatch {
+                stored: "a".into(),
+                configured: "b".into(),
+            },
+            Error::Transport(boxed()),
+            Error::UnsuitableTransport {
+                transport: "t".into(),
+                missing: "m".into(),
+            },
+            Error::Adapter(boxed()),
+            Error::ConflictUnresolved { record: "r".into() },
+            Error::UnknownPeer(PeerId::new("p").unwrap()),
+        ];
+        for error in errors {
+            let code = error.code().expect("every variant has a code").to_string();
+            let parts: Vec<_> = code.split("::").collect();
+            assert!(
+                parts.len() == 3 && parts[0] == "dbmesh",
+                "unexpected code `{code}`"
+            );
+            assert!(
+                error.help().is_some(),
+                "`{code}` tells the user what failed but not what to do"
+            );
+        }
+    }
 }

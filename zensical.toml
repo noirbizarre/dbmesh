@@ -22,6 +22,7 @@ Copyright &copy; 2026 Axel H. — MIT licensed
 nav = [
   { "Home" = "index.md" },
   { "About" = [
+    { "Architecture" = "architecture.md" },
     { "Architecture Decisions" = "adr/README.md" },
   ] },
 ]
