@@ -57,8 +57,20 @@ miette = "7"
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 
+# Opaque unique identifiers (nodes, transactions, sessions). Random v4 only: an
+# identifier must not leak a MAC address or a clock.
+uuid = { version = "1", features = ["v4"] }
+
+[features]
+# The SurrealDB mapping boundary (record identity, versionstamps, changefeed
+# DDL). It carries no SDK dependency yet: the live adapter lands behind this
+# same feature, so enabling it today costs nothing and breaks nothing later.
+surrealdb = []
+
 [dev-dependencies]
 tempfile = "3"
 insta = { version = "1", features = ["filters"] }
+# The library is runtime-agnostic; tokio only drives the in-process transport in tests.
+tokio = { version = "1", features = ["rt", "macros", "sync", "time"] }
 rstest = "0.26"
 pretty_assertions = "1"
