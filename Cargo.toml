@@ -72,5 +72,5 @@ tempfile = "3"
 insta = { version = "1", features = ["filters"] }
 # The library is runtime-agnostic; tokio only drives the in-process transport in tests.
 tokio = { version = "1", features = ["rt", "macros", "sync", "time"] }
-rstest = "0.26"
+rstest = "0.27"
 pretty_assertions = "1"
